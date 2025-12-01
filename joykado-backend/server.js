@@ -1,0 +1,267 @@
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Ensure upload directories exist
+const categories = ['HipHop', 'Anime', 'JPOP', 'Rock', 'Misc'];
+categories.forEach(cat => {
+    const songDir = path.join(__dirname, 'uploads', 'songs', cat);
+    const beatmapDir = path.join(__dirname, 'uploads', 'beatmaps', cat);
+    if (!fs.existsSync(songDir)) {
+        fs.mkdirSync(songDir, { recursive: true });
+        console.log(`Created directory: ${songDir}`);
+    }
+    if (!fs.existsSync(beatmapDir)) {
+        fs.mkdirSync(beatmapDir, { recursive: true });
+        console.log(`Created directory: ${beatmapDir}`);
+    }
+});
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const category = req.body.category || 'Misc';
+        if (file.fieldname === 'mp3') {
+            const dest = path.join(__dirname, 'uploads', 'songs', category);
+            cb(null, dest);
+        } else {
+            const dest = path.join(__dirname, 'uploads', 'beatmaps', category);
+            cb(null, dest);
+        }
+    },
+    filename: (req, file, cb) => {
+        const sanitizedName = (req.body.name || 'song').replace(/[^a-zA-Z0-9_-]/g, '_');
+        if (file.fieldname === 'mp3') {
+            cb(null, `${sanitizedName}.mp3`);
+        } else {
+            cb(null, `${sanitizedName}_beatmap.json`);
+        }
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+
+// Database setup (using SQLite for simplicity)
+const sqlite3 = require('sqlite3').verbose();
+const dbPath = path.join(__dirname, 'joykado.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error opening database:', err);
+    } else {
+        console.log('Connected to SQLite database');
+    }
+});
+
+// Initialize database
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS songs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        difficulty TEXT DEFAULT 'Medium',
+        mp3_path TEXT NOT NULL,
+        beatmap_path TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating table:', err);
+        } else {
+            console.log('Database table ready');
+        }
+    });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Joykado API is running' });
+});
+
+// Upload endpoint
+app.post('/api/songs/upload', upload.fields([
+    { name: 'mp3', maxCount: 1 },
+    { name: 'beatmap', maxCount: 1 }
+]), async (req, res) => {
+    try {
+        const { name, category, difficulty } = req.body;
+        
+        if (!name || !category) {
+            return res.status(400).json({ error: 'Name and category are required' });
+        }
+        
+        if (!req.files || !req.files.mp3) {
+            return res.status(400).json({ error: 'MP3 file is required' });
+        }
+        
+        const mp3File = req.files.mp3[0];
+        let beatmapPath = null;
+        
+        // Handle beatmap if provided
+        if (req.files.beatmap && req.files.beatmap[0]) {
+            beatmapPath = req.files.beatmap[0].path;
+        } else if (req.body.beatmap) {
+            // Beatmap sent as JSON string in form data
+            try {
+                const beatmapData = typeof req.body.beatmap === 'string' 
+                    ? JSON.parse(req.body.beatmap) 
+                    : req.body.beatmap;
+                
+                const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+                beatmapPath = path.join(
+                    __dirname, 
+                    'uploads', 
+                    'beatmaps', 
+                    category, 
+                    `${sanitizedName}_beatmap.json`
+                );
+                
+                fs.writeFileSync(beatmapPath, JSON.stringify(beatmapData, null, 2));
+                console.log(`Saved beatmap to: ${beatmapPath}`);
+            } catch (parseError) {
+                console.error('Error parsing beatmap JSON:', parseError);
+            }
+        }
+        
+        // Save to database
+        const stmt = db.prepare(`INSERT INTO songs (name, category, difficulty, mp3_path, beatmap_path) 
+                                 VALUES (?, ?, ?, ?, ?)`);
+        
+        stmt.run(name, category, difficulty || 'Medium', mp3File.path, beatmapPath, function(err) {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Failed to save to database' });
+            }
+            
+            res.json({ 
+                success: true, 
+                message: 'Song uploaded successfully',
+                song: {
+                    id: this.lastID,
+                    name,
+                    category,
+                    difficulty: difficulty || 'Medium',
+                    mp3_path: mp3File.path,
+                    beatmap_path: beatmapPath
+                }
+            });
+        });
+        stmt.finalize();
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get songs by category
+app.get('/api/songs', (req, res) => {
+    const { category } = req.query;
+    
+    let query = 'SELECT * FROM songs';
+    let params = [];
+    
+    if (category) {
+        query += ' WHERE category = ?';
+        params.push(category);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        
+        // Convert file paths to URLs
+        const songs = rows.map(song => {
+            const mp3Filename = path.basename(song.mp3_path);
+            const beatmapFilename = song.beatmap_path ? path.basename(song.beatmap_path) : null;
+            
+            return {
+                id: song.id,
+                name: song.name,
+                category: song.category,
+                difficulty: song.difficulty,
+                mp3_url: `/uploads/songs/${song.category}/${mp3Filename}`,
+                beatmap_url: beatmapFilename ? `/uploads/beatmaps/${song.category}/${beatmapFilename}` : null,
+                created_at: song.created_at
+            };
+        });
+        
+        res.json(songs);
+    });
+});
+
+// Get single song by ID
+app.get('/api/songs/:id', (req, res) => {
+    const { id } = req.params;
+    
+    db.get('SELECT * FROM songs WHERE id = ?', [id], (err, song) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        
+        if (!song) {
+            return res.status(404).json({ error: 'Song not found' });
+        }
+        
+        const mp3Filename = path.basename(song.mp3_path);
+        const beatmapFilename = song.beatmap_path ? path.basename(song.beatmap_path) : null;
+        
+        res.json({
+            id: song.id,
+            name: song.name,
+            category: song.category,
+            difficulty: song.difficulty,
+            mp3_url: `/uploads/songs/${song.category}/${mp3Filename}`,
+            beatmap_url: beatmapFilename ? `/uploads/beatmaps/${song.category}/${beatmapFilename}` : null,
+            created_at: song.created_at
+        });
+    });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🎮 Joykado API server running on port ${PORT}`);
+    console.log(`📤 Upload endpoint: http://localhost:${PORT}/api/songs/upload`);
+    console.log(`📥 Get songs endpoint: http://localhost:${PORT}/api/songs`);
+    console.log(`💚 Health check: http://localhost:${PORT}/health`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing database connection');
+    db.close((err) => {
+        if (err) {
+            console.error('Error closing database:', err);
+        } else {
+            console.log('Database connection closed');
+        }
+        process.exit(0);
+    });
+});
+

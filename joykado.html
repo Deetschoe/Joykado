@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joykado - Arcade Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+
+        :root {
+            --hunter-green: #386641;
+            --sage-green: #6a994e;
+            --yellow-green: #a7c957;
+            --champagne-mist: #f2e8cf;
+            --blushed-brick: #bc4749;
+            --base-bg: #ffffff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--champagne-mist) 0%, #e8d8b8 50%, var(--champagne-mist) 100%);
+            background-image: 
+                radial-gradient(circle, rgba(56, 102, 65, 0.15) 1px, transparent 1px),
+                radial-gradient(circle at 20% 50%, rgba(106, 153, 78, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(167, 201, 87, 0.1) 0%, transparent 50%);
+            background-size: 30px 30px, 400px 400px, 300px 300px;
+            background-position: 0 0, 0 0, 100% 100%;
+            overflow: hidden;
+            user-select: none;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(242, 232, 207, 0.3) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+        
+        .logo-container::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--sage-green), transparent);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(106, 153, 78, 0.5);
+        }
+
+        .logo-img {
+            max-width: 400px;
+            max-height: 200px;
+            width: auto;
+            height: auto;
+            filter: drop-shadow(0 6px 12px rgba(56, 102, 65, 0.4));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .game-card {
+            width: 320px;
+            height: 220px;
+            background: linear-gradient(145deg, #ffffff, var(--champagne-mist));
+            border-radius: 30px;
+            border: 5px solid var(--sage-green);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 10px 30px rgba(56, 102, 65, 0.25),
+                0 0 0 0 rgba(106, 153, 78, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            color: var(--hunter-green);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .game-card img,
+        .game-card .game-icon {
+            max-width: 250px;
+            max-height: 150px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 10px auto;
+            filter: drop-shadow(0 4px 8px rgba(56, 102, 65, 0.3));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .game-card:hover img,
+        .game-card:hover .game-icon {
+            transform: scale(1.15) rotate(3deg);
+            filter: drop-shadow(0 8px 16px rgba(106, 153, 78, 0.5));
+        }
+        
+        .game-card.selected img,
+        .game-card.selected .game-icon {
+            transform: scale(1.08);
+            filter: drop-shadow(0 6px 12px rgba(106, 153, 78, 0.5));
+        }
+        
+        .game-card.selected:hover img,
+        .game-card.selected:hover .game-icon {
+            transform: scale(1.15) rotate(3deg);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s ease-out;
+            z-index: 1;
+        }
+
+        .game-card:hover::before,
+        .game-card.selected::before {
+            left: 100%;
+        }
+        
+        /* Add corner accent */
+        .game-card .corner-accent {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 50px 50px 0;
+            border-color: transparent var(--yellow-green) transparent transparent;
+            opacity: 0;
+            transition: opacity 0.4s;
+            z-index: 1;
+        }
+        
+        .game-card:hover .corner-accent,
+        .game-card.selected .corner-accent {
+            opacity: 0.4;
+        }
+
+        .game-card:hover {
+            transform: scale(1.1) translateY(-8px) rotate(1deg);
+            border-color: var(--yellow-green);
+            box-shadow: 
+                0 0 40px rgba(167, 201, 87, 0.8),
+                0 0 60px rgba(106, 153, 78, 0.4),
+                0 15px 40px rgba(56, 102, 65, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            background: linear-gradient(145deg, #ffffff, var(--yellow-green));
+        }
+
+        .game-card.selected {
+            border-color: var(--yellow-green);
+            box-shadow: 
+                0 0 35px rgba(167, 201, 87, 0.9),
+                0 0 50px rgba(106, 153, 78, 0.5),
+                0 12px 35px rgba(56, 102, 65, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            transform: translateY(-5px) scale(1.05);
+            background: linear-gradient(145deg, #ffffff, rgba(167, 201, 87, 0.3));
+        }
+        
+        /* Make selected cards also show hover effects */
+        .game-card.selected:hover {
+            transform: scale(1.1) translateY(-8px) rotate(1deg);
+        }
+        
+        .game-card.selected:hover img {
+            transform: scale(1.1) rotate(2deg);
+        }
+
+        .game-icon {
+            font-size: 80px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 8px rgba(56, 102, 65, 0.3));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            -webkit-text-stroke: 2px var(--hunter-green);
+            -webkit-text-fill-color: var(--sage-green);
+            color: var(--sage-green);
+            text-shadow: 2px 2px 0px var(--hunter-green), 4px 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .game-subtitle {
+            font-size: 14px;
+            color: var(--hunter-green);
+            margin-top: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+        
+        .game-category {
+            font-size: 11px;
+            color: var(--sage-green);
+            margin-top: 4px;
+            font-weight: 600;
+            opacity: 0.7;
+            font-style: italic;
+        }
+        
+        .description-text {
+            text-align: center;
+            color: var(--hunter-green);
+            font-size: 16px;
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            line-height: 1.6;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            border: 2px solid var(--sage-green);
+            box-shadow: 0 4px 15px rgba(56, 102, 65, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .description-text strong {
+            color: var(--sage-green);
+            font-weight: 700;
+        }
+        
+        .game-card .indicator-dot {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 16px;
+            height: 16px;
+            background: var(--yellow-green);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            box-shadow: 0 0 10px rgba(167, 201, 87, 0.6);
+            z-index: 3;
+        }
+        
+        .game-card:hover .indicator-dot,
+        .game-card.selected .indicator-dot {
+            opacity: 1;
+            transform: scale(1.3);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1.3); opacity: 1; }
+            50% { transform: scale(1.6); opacity: 0.7; }
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* Add particle effects */
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: translateY(0) scale(0); }
+            50% { opacity: 1; transform: translateY(-20px) scale(1); }
+        }
+        
+        .game-card:hover .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--yellow-green);
+            border-radius: 50%;
+            animation: sparkle 1.5s ease-out infinite;
+            pointer-events: none;
+        }
+        
+        /* Add glow pulse animation */
+        @keyframes glow-pulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 35px rgba(167, 201, 87, 0.9),
+                    0 0 50px rgba(106, 153, 78, 0.5),
+                    0 12px 35px rgba(56, 102, 65, 0.5);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 50px rgba(167, 201, 87, 1),
+                    0 0 70px rgba(106, 153, 78, 0.7),
+                    0 15px 45px rgba(56, 102, 65, 0.6);
+            }
+        }
+        
+        .game-card.selected {
+            animation: glow-pulse 2s ease-in-out infinite;
+        }
+        
+        /* Add subtle rotation on hover for more dynamism (only when not selected) */
+        @keyframes subtle-rotate {
+            0%, 100% { transform: translateY(-8px) scale(1.1) rotate(1deg); }
+            50% { transform: translateY(-10px) scale(1.12) rotate(-1deg); }
+        }
+        
+        .game-card:hover:not(.selected) {
+            animation: subtle-rotate 3s ease-in-out infinite;
+        }
+        
+        /* Add text glow effect */
+        .game-subtitle,
+        .game-category {
+            transition: all 0.3s ease;
+        }
+        
+        .game-card:hover .game-subtitle {
+            color: var(--sage-green);
+            text-shadow: 0 0 10px rgba(106, 153, 78, 0.5);
+        }
+        
+        .game-card:hover .game-category {
+            color: var(--yellow-green);
+            opacity: 1;
+        }
+        
+        /* Add border animation */
+        @keyframes border-glow {
+            0%, 100% { border-color: var(--yellow-green); }
+            50% { border-color: var(--sage-green); }
+        }
+        
+        .game-card.selected:not(:hover) {
+            animation: glow-pulse 2s ease-in-out infinite, border-glow 3s ease-in-out infinite;
+        }
+        
+        .game-card.selected:hover {
+            animation: subtle-rotate 3s ease-in-out infinite;
+        }
+
+        .instruction-text {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: var(--hunter-green);
+            opacity: 0.7;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex flex-col items-center justify-center min-h-screen p-8" style="position: relative; z-index: 1;">
+        <div class="logo-container">
+            <img src="joykado.png" alt="Joykado Logo" class="logo-img" onerror="this.style.display='none'; document.querySelector('.logo-fallback').style.display='block';">
+            <div class="logo-fallback" style="display: none;">
+                <h1 class="text-6xl font-black" style="color: var(--sage-green); -webkit-text-stroke: 3px var(--hunter-green); -webkit-text-fill-color: var(--sage-green); text-shadow: 4px 4px 0px var(--hunter-green);">JOYKADO</h1>
+            </div>
+        </div>
+        
+        <div class="description-text">
+            <strong>Arcade Vending Machine.</strong> Depending on how well you do, you get a prize in that category. 
+            <strong>Beatkami</strong> is the category of <strong>Music Prizes</strong>. Each game offers unique rewards based on your performance!
+        </div>
+        
+        <div class="mb-6">
+            <button id="dual-monitor-btn" class="beatkami-button bg-purple-50 text-purple-700 border-purple-300" onclick="enableDualMonitorMode()">
+                <span>🖥️ Enable Dual Monitor Mode</span>
+            </button>
+            <p class="text-sm text-gray-600 mt-2">For arcade setup: Top monitor shows score, bottom shows gameplay</p>
+        </div>
+
+        <div class="games-grid" id="games-grid">
+            <div class="game-card" data-game="beatkami.html" tabindex="0" onclick="handleCardClick(this)">
+                <div class="corner-accent"></div>
+                <div class="indicator-dot"></div>
+                <img src="kami.png" alt="Beatkami Logo" style="max-width: 250px; max-height: 150px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto 10px auto;">
+                <div class="game-subtitle">Beatkami</div>
+                <div class="game-category">Music Prizes</div>
+            </div>
+            <div class="game-card" data-game="sample1.html" tabindex="0" onclick="handleCardClick(this)">
+                <div class="corner-accent"></div>
+                <div class="indicator-dot"></div>
+                <div class="game-icon">🎮</div>
+                <div class="game-subtitle">Sample Game 1</div>
+                <div class="game-category">Action Prizes</div>
+            </div>
+            <div class="game-card" data-game="sample2.html" tabindex="0" onclick="handleCardClick(this)">
+                <div class="corner-accent"></div>
+                <div class="indicator-dot"></div>
+                <div class="game-icon">🧩</div>
+                <div class="game-subtitle">Sample Game 2</div>
+                <div class="game-category">Puzzle Prizes</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        let gameCards = [];
+        let backgroundMusic = null;
+
+        // Initialize
+        function init() {
+            gameCards = Array.from(document.querySelectorAll('.game-card'));
+            if (gameCards.length > 0) {
+                const firstCard = gameCards[0];
+                firstCard.classList.add('selected');
+                firstCard.focus();
+                // Apply initial hover effect to first card
+                firstCard.style.transform = 'translateY(-5px) scale(1.05)';
+                const firstImg = firstCard.querySelector('img');
+                const firstIcon = firstCard.querySelector('.game-icon');
+                if (firstImg) firstImg.style.transform = 'scale(1.08)';
+                if (firstIcon) firstIcon.style.transform = 'scale(1.08)';
+            }
+
+            // Start background music
+            try {
+                backgroundMusic = new Audio('beatkami.mp3');
+                backgroundMusic.loop = true;
+                backgroundMusic.volume = 0.3;
+                backgroundMusic.play().catch(e => {
+                    console.log("Background music autoplay blocked:", e);
+                });
+            } catch(e) {
+                console.log("Background music file not found:", e);
+            }
+
+            // Enable audio on first interaction
+            document.addEventListener('click', () => {
+                if (backgroundMusic && backgroundMusic.paused) {
+                    backgroundMusic.play().catch(e => console.log("Music play error:", e));
+                }
+            }, { once: true });
+
+            document.addEventListener('keydown', handleKeyDown);
+        }
+
+        function handleKeyDown(event) {
+            const key = event.key.toLowerCase();
+
+            if (key === 'enter' || key === ' ') {
+                event.preventDefault();
+                if (gameCards[currentIndex]) {
+                    // Play click sound
+                    try {
+                        const clickSound = new Audio('sounds/click.wav');
+                        clickSound.volume = 0.5;
+                        clickSound.play().catch(e => console.log("Click sound error:", e));
+                    } catch(e) {
+                        console.log("Click sound not found:", e);
+                    }
+                    
+                    const gameUrl = gameCards[currentIndex].dataset.game;
+                    if (gameUrl) {
+                        // Stop background music before navigating
+                        if (backgroundMusic) {
+                            backgroundMusic.pause();
+                            backgroundMusic = null;
+                        }
+                        // Small delay to let sound play
+                        setTimeout(() => {
+                            window.location.href = gameUrl;
+                        }, 100);
+                    }
+                }
+                return;
+            }
+
+            let moved = false;
+            if (key === 'w' || key === 'arrowup') {
+                event.preventDefault();
+                currentIndex = Math.max(0, currentIndex - 1);
+                moved = true;
+            } else if (key === 's' || key === 'arrowdown') {
+                event.preventDefault();
+                currentIndex = Math.min(gameCards.length - 1, currentIndex + 1);
+                moved = true;
+            } else if (key === 'a' || key === 'arrowleft') {
+                event.preventDefault();
+                currentIndex = Math.max(0, currentIndex - 1);
+                moved = true;
+            } else if (key === 'd' || key === 'arrowright') {
+                event.preventDefault();
+                currentIndex = Math.min(gameCards.length - 1, currentIndex + 1);
+                moved = true;
+            }
+
+            if (moved && gameCards.length > 0) {
+                gameCards.forEach(card => {
+                    card.classList.remove('selected');
+                    // Reset all inline styles
+                    card.style.transform = '';
+                    const img = card.querySelector('img');
+                    const icon = card.querySelector('.game-icon');
+                    if (img) img.style.transform = '';
+                    if (icon) icon.style.transform = '';
+                });
+                
+                const selectedCard = gameCards[currentIndex];
+                selectedCard.classList.add('selected');
+                selectedCard.focus();
+                
+                // Apply hover-like effects to selected card (keyboard navigation)
+                // This mimics the CSS hover state
+                selectedCard.style.transform = 'translateY(-5px) scale(1.05)';
+                
+                const selectedImg = selectedCard.querySelector('img');
+                const selectedIcon = selectedCard.querySelector('.game-icon');
+                if (selectedImg) {
+                    selectedImg.style.transform = 'scale(1.08)';
+                }
+                if (selectedIcon) {
+                    selectedIcon.style.transform = 'scale(1.08)';
+                }
+                
+                // Play navigation sound
+                try {
+                    const navSound = new Audio('sounds/button.wav');
+                    navSound.volume = 0.5;
+                    navSound.play().catch(e => console.log("Nav sound error:", e));
+                } catch(e) {
+                    console.log("Nav sound not found:", e);
+                }
+            }
+        }
+
+        // Handle card click
+        function handleCardClick(card) {
+            // Play click sound
+            try {
+                const clickSound = new Audio('sounds/click.wav');
+                clickSound.volume = 0.5;
+                clickSound.play().catch(e => console.log("Click sound error:", e));
+            } catch(e) {
+                console.log("Click sound not found:", e);
+            }
+            
+            const gameUrl = card.dataset.game;
+            if (gameUrl) {
+                // Stop background music before navigating
+                if (backgroundMusic) {
+                    backgroundMusic.pause();
+                    backgroundMusic = null;
+                }
+                // Small delay to let sound play
+                setTimeout(() => {
+                    window.location.href = gameUrl;
+                }, 100);
+            }
+        }
+
+        // Dual Monitor Mode
+        let dualMonitorMode = false;
+        let scoreWindow = null;
+        
+        function enableDualMonitorMode() {
+            dualMonitorMode = true;
+            localStorage.setItem('dualMonitorMode', 'true');
+            
+            // Open score display window (top monitor)
+            // Position it at the top of the screen (for top monitor)
+            const width = screen.width;
+            const height = screen.height;
+            scoreWindow = window.open(
+                'score-display.html',
+                'ScoreDisplay',
+                `width=${width},height=${height},left=0,top=0,toolbar=no,menubar=no,scrollbars=no,resizable=yes,fullscreen=yes`
+            );
+            
+            if (scoreWindow) {
+                // Play click sound
+                try {
+                    const clickSound = new Audio('sounds/click.wav');
+                    clickSound.volume = 0.5;
+                    clickSound.play().catch(e => console.log("Click sound error:", e));
+                } catch(e) {
+                    console.log("Click sound not found:", e);
+                }
+                
+                // Update button
+                const btn = document.getElementById('dual-monitor-btn');
+                btn.innerHTML = '<span>🖥️ Dual Monitor: Enabled</span>';
+                btn.classList.remove('bg-purple-50', 'text-purple-700', 'border-purple-300');
+                btn.classList.add('bg-green-50', 'text-green-700', 'border-green-300');
+                
+                // Show message
+                setTimeout(() => {
+                    alert('Dual Monitor Mode Enabled!\n\nTop window: Score Display (position on top monitor)\nMain window: Gameplay (position on bottom monitor)\n\nDrag the score window to your top monitor and maximize it.');
+                }, 500);
+            } else {
+                alert('Please allow popups for this site to enable dual monitor mode.');
+                dualMonitorMode = false;
+                localStorage.setItem('dualMonitorMode', 'false');
+            }
+        }
+        
+        // Check if dual monitor mode was previously enabled
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+            if (localStorage.getItem('dualMonitorMode') === 'true') {
+                document.getElementById('dual-monitor-btn').textContent = '🖥️ Dual Monitor Mode: Enabled';
+                document.getElementById('dual-monitor-btn').classList.add('bg-green-50', 'text-green-700', 'border-green-300');
+            }
+        });
+    </script>
+</body>
+</html>
+
+

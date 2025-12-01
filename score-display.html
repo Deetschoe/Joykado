@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joykado - Score Display (Top Monitor)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+
+        :root {
+            --hunter-green: #386641;
+            --sage-green: #6a994e;
+            --yellow-green: #a7c957;
+            --champagne-mist: #f2e8cf;
+            --blushed-brick: #bc4749;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--champagne-mist) 0%, #e8d8b8 50%, var(--champagne-mist) 100%);
+            background-image: 
+                radial-gradient(circle, rgba(56, 102, 65, 0.15) 1px, transparent 1px),
+                radial-gradient(circle at 20% 50%, rgba(106, 153, 78, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(167, 201, 87, 0.1) 0%, transparent 50%);
+            background-size: 30px 30px, 400px 400px, 300px 300px;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .score-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .character-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .character-display {
+            width: 300px;
+            height: 300px;
+            position: relative;
+        }
+
+        .character-display img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 16px rgba(56, 102, 65, 0.4));
+            animation: character-bounce 0.6s ease-in-out infinite;
+        }
+
+        @keyframes character-bounce {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .score-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .score-item {
+            background: linear-gradient(145deg, #ffffff, var(--champagne-mist));
+            border: 6px solid var(--sage-green);
+            border-radius: 30px;
+            padding: 40px 60px;
+            box-shadow: 
+                0 10px 30px rgba(56, 102, 65, 0.25),
+                0 0 0 0 rgba(106, 153, 78, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            min-width: 400px;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--hunter-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .score-value {
+            font-size: 72px;
+            font-weight: 900;
+            color: var(--sage-green);
+            -webkit-text-stroke: 3px var(--hunter-green);
+            -webkit-text-fill-color: var(--yellow-green);
+            text-shadow: 4px 4px 0px var(--hunter-green), 8px 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .combo-value {
+            font-size: 96px;
+            font-weight: 900;
+            color: var(--yellow-green);
+            -webkit-text-stroke: 4px var(--hunter-green);
+            -webkit-text-fill-color: var(--yellow-green);
+            text-shadow: 
+                0 0 30px var(--yellow-green),
+                0 0 50px rgba(167, 201, 87, 0.6),
+                4px 4px 0px var(--hunter-green),
+                8px 8px 16px rgba(0,0,0,0.2);
+            animation: combo-pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes combo-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .player-scores {
+            display: flex;
+            gap: 60px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .player-score-card {
+            background: linear-gradient(145deg, #ffffff, var(--champagne-mist));
+            border: 6px solid var(--sage-green);
+            border-radius: 30px;
+            padding: 30px 50px;
+            box-shadow: 
+                0 10px 30px rgba(56, 102, 65, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .player-label {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--hunter-green);
+            margin-bottom: 15px;
+        }
+
+        .player-score-value {
+            font-size: 56px;
+            font-weight: 900;
+            color: var(--sage-green);
+            -webkit-text-stroke: 2px var(--hunter-green);
+            -webkit-text-fill-color: var(--yellow-green);
+        }
+
+        .waiting-message {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--hunter-green);
+            text-align: center;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="score-container" id="score-container">
+        <div class="character-section">
+            <div class="character-display">
+                <img src="kami.png" alt="Kami Character" id="character-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        
+        <div class="score-section">
+            <div class="score-item">
+                <div class="score-label">Score</div>
+                <div class="score-value" id="total-score">0</div>
+            </div>
+            
+            <div class="score-item">
+                <div class="score-label">Combo</div>
+                <div class="combo-value" id="combo-display">0</div>
+            </div>
+            
+            <div class="player-scores" id="player-scores" style="display: none;">
+                <div class="player-score-card">
+                    <div class="player-label">Player 1</div>
+                    <div class="player-score-value" id="player1-score">0</div>
+                </div>
+                <div class="player-score-card">
+                    <div class="player-label">Player 2</div>
+                    <div class="player-score-value" id="player2-score">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="waiting-message" id="waiting-message">
+            Waiting for game to start...
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            score: 0,
+            combo: 0,
+            player1Score: 0,
+            player2Score: 0,
+            characterState: 'normal'
+        };
+
+        // Listen for messages via BroadcastChannel
+        const channel = new BroadcastChannel('joykado-score');
+        
+        channel.addEventListener('message', function(event) {
+            const data = event.data;
+            
+            if (data.type === 'score-update') {
+                gameData.score = data.score || 0;
+                gameData.combo = data.combo || 0;
+                gameData.player1Score = data.player1Score || 0;
+                gameData.player2Score = data.player2Score || 0;
+                updateDisplay();
+            }
+            
+            if (data.type === 'character-update') {
+                gameData.characterState = data.state || 'normal';
+                updateCharacter();
+            }
+            
+            if (data.type === 'game-start') {
+                document.getElementById('waiting-message').style.display = 'none';
+                if (data.playerCount === 2) {
+                    document.getElementById('player-scores').style.display = 'flex';
+                }
+            }
+            
+            if (data.type === 'game-end') {
+                document.getElementById('waiting-message').style.display = 'block';
+                document.getElementById('waiting-message').textContent = 'Game Over!';
+            }
+        });
+
+        function updateDisplay() {
+            document.getElementById('total-score').textContent = gameData.score.toLocaleString();
+            document.getElementById('combo-display').textContent = gameData.combo;
+            
+            if (gameData.combo > 0) {
+                document.getElementById('combo-display').style.display = 'block';
+            }
+            
+            if (document.getElementById('player-scores').style.display !== 'none') {
+                document.getElementById('player1-score').textContent = gameData.player1Score.toLocaleString();
+                document.getElementById('player2-score').textContent = gameData.player2Score.toLocaleString();
+            }
+        }
+
+        function updateCharacter() {
+            const img = document.getElementById('character-img');
+            if (!img) return;
+            
+            switch(gameData.characterState) {
+                case 'miss':
+                    img.src = 'kamimiss.png';
+                    break;
+                case 'combo':
+                    img.src = 'kamicombo.png';
+                    break;
+                case 'normal':
+                default:
+                    img.src = 'kami.png';
+                    break;
+            }
+        }
+
+        // Request fullscreen on load
+        window.addEventListener('load', () => {
+            // Try to go fullscreen (requires user interaction, so we'll just maximize)
+            if (window.screen && window.screen.width) {
+                window.resizeTo(screen.width, screen.height);
+                window.moveTo(0, 0);
+            }
+        });
+
+        // Keep window on top (if possible)
+        setInterval(() => {
+            if (window.opener && !window.opener.closed) {
+                // Window is still connected
+            } else {
+                // Parent window closed, close this one too
+                window.close();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+
