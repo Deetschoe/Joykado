@@ -16,4 +16,4 @@
 </div>
 
 <!-- Big red text below -->
-<h1 style="color: red; text-align: center;">JOYKADO: SHORT GAMES BIG PRIZES</h1>
+<h1 style=" text-align: right;">pop up vending machine arcade with a few games each providing different prizes</h1>
