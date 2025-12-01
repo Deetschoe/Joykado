@@ -9,7 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins (restrict in production if needed)
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -86,11 +90,6 @@ db.serialize(() => {
             console.log('Database table ready');
         }
     });
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', message: 'Joykado API is running' });
 });
 
 // Upload endpoint
@@ -244,12 +243,37 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        message: 'Joykado API is running',
+        endpoints: {
+            health: '/health',
+            upload: '/api/songs/upload',
+            getSongs: '/api/songs',
+            getSongById: '/api/songs/:id'
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        message: 'Joykado API is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🎮 Joykado API server running on port ${PORT}`);
     console.log(`📤 Upload endpoint: http://localhost:${PORT}/api/songs/upload`);
     console.log(`📥 Get songs endpoint: http://localhost:${PORT}/api/songs`);
     console.log(`💚 Health check: http://localhost:${PORT}/health`);
+    console.log(`🌐 CORS enabled for all origins`);
 });
 
 // Graceful shutdown
