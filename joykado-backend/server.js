@@ -20,6 +20,23 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve config.js for frontend dynamically
+app.get('/config.js', (req, res) => {
+    // Generate config.js dynamically with the current server URL from environment
+    // Use COOLIFY_URL if set, otherwise construct from request
+    const configUrl = process.env.COOLIFY_URL || 
+                     process.env.COOLIFY_FQDN ? `http://${process.env.COOLIFY_FQDN}` : 
+                     `http://${req.get('host')}`;
+    const configContent = `// Auto-generated config from backend
+// This file is generated dynamically - do not edit manually
+// Set COOLIFY_URL environment variable in Coolify to customize
+window.JOYKADO_CONFIG = {
+    COOLIFY_API_URL: '${configUrl}'
+};`;
+    res.setHeader('Content-Type', 'application/javascript');
+    res.send(configContent);
+});
+
 // Ensure upload directories exist
 const categories = ['HipHop', 'Anime', 'JPOP', 'Rock', 'Misc'];
 categories.forEach(cat => {
@@ -49,10 +66,14 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const sanitizedName = (req.body.name || 'song').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 9); // Short random ID
+        
         if (file.fieldname === 'mp3') {
             cb(null, `${sanitizedName}.mp3`);
         } else {
-            cb(null, `${sanitizedName}_beatmap.json`);
+            // Unique beatmap filename: songname_timestamp_randomid_beatmap.json
+            cb(null, `${sanitizedName}_${timestamp}_${randomId}_beatmap.json`);
         }
     }
 });
@@ -122,12 +143,15 @@ app.post('/api/songs/upload', upload.fields([
                     : req.body.beatmap;
                 
                 const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+                const timestamp = Date.now();
+                const randomId = Math.random().toString(36).substring(2, 9); // Short random ID
+                // Unique beatmap filename: songname_timestamp_randomid_beatmap.json
                 beatmapPath = path.join(
                     __dirname, 
                     'uploads', 
                     'beatmaps', 
                     category, 
-                    `${sanitizedName}_beatmap.json`
+                    `${sanitizedName}_${timestamp}_${randomId}_beatmap.json`
                 );
                 
                 fs.writeFileSync(beatmapPath, JSON.stringify(beatmapData, null, 2));

@@ -9,6 +9,8 @@ Backend server for the Joykado arcade machine. Handles song and beatmap uploads,
 - SQLite database for metadata storage
 - RESTful API endpoints
 - CORS enabled for frontend integration
+- **Unique beatmap filenames** - Prevents conflicts with timestamp + random ID
+- **Dynamic config.js** - Automatically serves API URL to frontend from environment variables
 
 ## Setup
 
@@ -28,6 +30,29 @@ cp .env.example .env
 ```bash
 npm start
 ```
+
+## Configuration
+
+### Environment Variables
+
+The backend automatically uses environment variables set by Coolify:
+- `COOLIFY_URL` - Automatically set by Coolify (the public URL of your application)
+- `PORT` - Server port (default: 3000, set by Coolify)
+- `HOST` - Server host (default: 0.0.0.0, set by Coolify)
+
+### Dynamic Config Endpoint
+
+The backend serves `/config.js` dynamically, which provides the API URL to the frontend:
+- Uses `COOLIFY_URL` environment variable automatically
+- Frontend loads this config instead of hardcoded URLs
+- No need to edit HTML files when deploying
+
+### Unique Beatmap Filenames
+
+Beatmaps are automatically saved with unique filenames to prevent conflicts:
+- **Format**: `songname_timestamp_randomid_beatmap.json`
+- **Example**: `my_song_1701234567890_a3f9k2x_beatmap.json`
+- This ensures that even if multiple songs have the same name, their beatmaps won't overwrite each other
 
 For development with auto-reload:
 ```bash
