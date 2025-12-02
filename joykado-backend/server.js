@@ -106,10 +106,35 @@ db.serialize(() => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`, (err) => {
         if (err) {
-            console.error('Error creating table:', err);
+            console.error('Error creating songs table:', err);
         } else {
-            console.log('Database table ready');
+            console.log('Songs table ready');
         }
+    });
+    
+    db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        player_name TEXT NOT NULL,
+        song_name TEXT NOT NULL,
+        song_category TEXT NOT NULL,
+        score INTEGER NOT NULL,
+        combo INTEGER DEFAULT 0,
+        accuracy REAL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating leaderboard table:', err);
+        } else {
+            console.log('Leaderboard table ready');
+        }
+    });
+    
+    // Create indexes for faster queries
+    db.run(`CREATE INDEX IF NOT EXISTS idx_leaderboard_song ON leaderboard(song_name, song_category)`, (err) => {
+        if (err) console.error('Error creating index:', err);
+    });
+    db.run(`CREATE INDEX IF NOT EXISTS idx_leaderboard_score ON leaderboard(score DESC)`, (err) => {
+        if (err) console.error('Error creating index:', err);
     });
 });
 
@@ -258,6 +283,67 @@ app.get('/api/songs/:id', (req, res) => {
             beatmap_url: beatmapFilename ? `/uploads/beatmaps/${song.category}/${beatmapFilename}` : null,
             created_at: song.created_at
         });
+    });
+});
+
+// Submit score to leaderboard
+app.post('/api/leaderboard', (req, res) => {
+    try {
+        const { player_name, song_name, song_category, score, combo, accuracy } = req.body;
+        
+        if (!player_name || !song_name || !song_category || score === undefined) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        
+        const stmt = db.prepare(`INSERT INTO leaderboard (player_name, song_name, song_category, score, combo, accuracy) 
+                                 VALUES (?, ?, ?, ?, ?, ?)`);
+        
+        stmt.run(player_name, song_name, song_category, score, combo || 0, accuracy || 0, function(err) {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Failed to save score' });
+            }
+            
+            res.json({ 
+                success: true, 
+                message: 'Score saved successfully',
+                id: this.lastID
+            });
+        });
+        stmt.finalize();
+    } catch (error) {
+        console.error('Score submission error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get leaderboard
+app.get('/api/leaderboard', (req, res) => {
+    const { song_name, song_category, limit } = req.query;
+    
+    let query = 'SELECT * FROM leaderboard';
+    let params = [];
+    
+    if (song_name && song_category) {
+        query += ' WHERE song_name = ? AND song_category = ?';
+        params.push(song_name, song_category);
+    } else if (song_category) {
+        query += ' WHERE song_category = ?';
+        params.push(song_category);
+    }
+    
+    query += ' ORDER BY score DESC, combo DESC, accuracy DESC';
+    
+    const limitNum = parseInt(limit) || 50;
+    query += ` LIMIT ${limitNum}`;
+    
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        
+        res.json(rows);
     });
 });
 
