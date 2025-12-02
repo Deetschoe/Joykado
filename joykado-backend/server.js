@@ -58,22 +58,56 @@ const storage = multer.diskStorage({
         const category = req.body.category || 'Misc';
         if (file.fieldname === 'mp3') {
             const dest = path.join(__dirname, 'uploads', 'songs', category);
+            // Ensure directory exists
+            if (!fs.existsSync(dest)) {
+                fs.mkdirSync(dest, { recursive: true });
+                console.log(`📁 Created MP3 directory: ${dest}`);
+            }
+            console.log(`📁 MP3 destination: ${dest}`);
             cb(null, dest);
         } else {
             const dest = path.join(__dirname, 'uploads', 'beatmaps', category);
+            // Ensure directory exists
+            if (!fs.existsSync(dest)) {
+                fs.mkdirSync(dest, { recursive: true });
+                console.log(`📁 Created beatmap directory: ${dest}`);
+            }
+            console.log(`📁 Beatmap destination: ${dest}`);
             cb(null, dest);
         }
     },
     filename: (req, file, cb) => {
-        const sanitizedName = (req.body.name || 'song').replace(/[^a-zA-Z0-9_-]/g, '_');
         const timestamp = Date.now();
         const randomId = Math.random().toString(36).substring(2, 9); // Short random ID
         
         if (file.fieldname === 'mp3') {
-            cb(null, `${sanitizedName}.mp3`);
+            let filename;
+            
+            // Use original filename if available, extract first 5 words
+            if (req.body.original_filename) {
+                const originalName = req.body.original_filename;
+                // Remove extension
+                const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
+                // Get first 5 words
+                const words = nameWithoutExt.split(/[\s_-]+/).slice(0, 5);
+                const firstWords = words.join('_');
+                // Sanitize and add extension
+                const sanitized = firstWords.replace(/[^a-zA-Z0-9_-]/g, '_');
+                filename = `${sanitized}.mp3`;
+            } else {
+                // Fallback to song name
+                const sanitizedName = (req.body.name || 'song').replace(/[^a-zA-Z0-9_-]/g, '_');
+                filename = `${sanitizedName}.mp3`;
+            }
+            
+            console.log(`📝 MP3 filename: ${filename} (from: ${req.body.original_filename || 'song name'})`);
+            cb(null, filename);
         } else {
             // Unique beatmap filename: songname_timestamp_randomid_beatmap.json
-            cb(null, `${sanitizedName}_${timestamp}_${randomId}_beatmap.json`);
+            const sanitizedName = (req.body.name || 'song').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const filename = `${sanitizedName}_${timestamp}_${randomId}_beatmap.json`;
+            console.log(`📝 Beatmap filename: ${filename}`);
+            cb(null, filename);
         }
     }
 });
@@ -165,8 +199,23 @@ app.post('/api/songs/upload', upload.fields([
             originalname: mp3File.originalname,
             filename: mp3File.filename,
             path: mp3File.path,
-            size: mp3File.size
+            size: mp3File.size,
+            mimetype: mp3File.mimetype
         });
+        
+        // Verify the file was actually written to disk
+        if (!fs.existsSync(mp3File.path)) {
+            console.error('❌ CRITICAL: MP3 file path does not exist:', mp3File.path);
+            return res.status(500).json({ error: 'MP3 file was not saved to disk' });
+        }
+        
+        const fileStats = fs.statSync(mp3File.path);
+        console.log('✅ MP3 file verified on disk:', {
+            path: mp3File.path,
+            size: fileStats.size,
+            created: fileStats.birthtime
+        });
+        
         let beatmapPath = null;
         
         // Handle beatmap if provided
@@ -204,9 +253,23 @@ app.post('/api/songs/upload', upload.fields([
         
         stmt.run(name, category, difficulty || 'Medium', mp3File.path, beatmapPath, function(err) {
             if (err) {
-                console.error('Database error:', err);
+                console.error('❌ Database error:', err);
                 return res.status(500).json({ error: 'Failed to save to database' });
             }
+            
+            // Verify file actually exists on disk
+            if (fs.existsSync(mp3File.path)) {
+                const stats = fs.statSync(mp3File.path);
+                console.log('✅ MP3 file verified on disk:', {
+                    path: mp3File.path,
+                    size: stats.size,
+                    exists: true
+                });
+            } else {
+                console.error('❌ MP3 file NOT found on disk after upload:', mp3File.path);
+            }
+            
+            console.log('✅ Song saved to database with ID:', this.lastID);
             
             res.json({ 
                 success: true, 
