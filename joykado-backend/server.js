@@ -144,17 +144,29 @@ app.post('/api/songs/upload', upload.fields([
     { name: 'beatmap', maxCount: 1 }
 ]), async (req, res) => {
     try {
+        console.log('📥 Upload request received');
+        console.log('📋 Body:', req.body);
+        console.log('📁 Files:', req.files ? Object.keys(req.files) : 'No files');
+        
         const { name, category, difficulty } = req.body;
         
         if (!name || !category) {
+            console.error('❌ Missing name or category');
             return res.status(400).json({ error: 'Name and category are required' });
         }
         
-        if (!req.files || !req.files.mp3) {
+        if (!req.files || !req.files.mp3 || !req.files.mp3[0]) {
+            console.error('❌ MP3 file missing. Files received:', req.files);
             return res.status(400).json({ error: 'MP3 file is required' });
         }
         
         const mp3File = req.files.mp3[0];
+        console.log('✅ MP3 file received:', {
+            originalname: mp3File.originalname,
+            filename: mp3File.filename,
+            path: mp3File.path,
+            size: mp3File.size
+        });
         let beatmapPath = null;
         
         // Handle beatmap if provided
