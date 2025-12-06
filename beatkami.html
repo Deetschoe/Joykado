@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beatkami - Rhythm Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load configuration (try backend first, fallback to local) -->
+    <script>
+        // Try to load from backend first (for production)
+        // This will be set synchronously before other scripts run
+        (function() {
+            const configScript = document.createElement('script');
+            configScript.src = '/config.js';
+            configScript.onerror = function() {
+                // Fallback to local config.js if backend config not available
+                const localConfig = document.createElement('script');
+                localConfig.src = 'config.js';
+                document.head.appendChild(localConfig);
+            };
+            document.head.appendChild(configScript);
+        })();
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
 
@@ -670,15 +686,48 @@
         <div id="countdown-number" class="text-[200px] text-white font-black drop-shadow-[0_0_40px_rgba(106,153,78,1)]">3</div>
     </div>
 
+    <!-- === SCREEN: USERNAME ENTRY (Home Screen) === -->
+    <div id="screen-username-entry" class="screen active">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl max-w-lg w-full text-center">
+            <div class="mb-8">
+                <img src="kami.png" alt="Beatkami Logo" style="max-width: 200px; max-height: 120px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(56, 102, 65, 0.3));">
+            </div>
+            <h2 class="text-3xl text-gray-700 font-bold mb-4">Enter Your Username</h2>
+            <p class="text-gray-500 mb-6">Use A/D to move, W/S to change letters, Enter to confirm</p>
+            
+            <div class="mb-6">
+                <div id="username-display" class="text-6xl font-black mb-4" style="color: var(--hunter-green); letter-spacing: 0.2em;">
+                    AAAAA
+                </div>
+                <div class="text-sm text-gray-500">Current letter: <span id="username-letter-index">0</span>/5</div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-lg font-semibold text-gray-700 mb-2">Controls:</div>
+                <div class="text-sm text-gray-600">
+                    <div>A / ← : Move left</div>
+                    <div>D / → : Move right</div>
+                    <div>W / ↑ : Previous letter</div>
+                    <div>S / ↓ : Next letter</div>
+                    <div>Enter : Confirm username</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- === SCREEN 1: MAIN MENU === -->
-    <div id="screen-menu" class="screen active">
+    <div id="screen-menu" class="screen">
         <div class="mb-8">
             <img src="kami.png" alt="Beatkami Logo" style="max-width: 200px; max-height: 120px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto; filter: drop-shadow(0 4px 8px rgba(56, 102, 65, 0.3));">
         </div>
         <h1 class="text-4xl font-black mb-10 tracking-widest" style="color: var(--hunter-green); -webkit-text-stroke: 2px var(--sage-green); -webkit-text-fill-color: var(--yellow-green); text-shadow: 3px 3px 0px var(--hunter-green), 6px 6px 12px rgba(0,0,0,0.2);">BEATKAMI</h1>
+        <div id="player-name-display" class="text-xl font-bold mb-4" style="color: var(--hunter-green);">Player: <span id="player-name-text">AAAAA</span></div>
         <div id="main-menu-options" class="flex flex-col gap-4 items-center">
             <div class="menu-item beatkami-button bg-blue-50 text-blue-700 border-blue-300" data-action="play" tabindex="0">
                 <span>🎧 Play Songs</span>
+            </div>
+            <div class="menu-item beatkami-button bg-yellow-50 text-yellow-700 border-yellow-300" data-action="scores" tabindex="0">
+                <span>🏆 Scores</span>
             </div>
             <div class="menu-item beatkami-button bg-gray-100 text-gray-600 border-gray-300" data-action="options" tabindex="0">
                 <span>⚙️ Options</span>
@@ -791,11 +840,11 @@
             </div>
             
             <div class="mb-6">
-                <p class="text-gray-500 mb-3 text-sm">Upload external files (use mouse):</p>
-                <div class="flex justify-center flex-wrap gap-2">
+                <!-- <p class="text-gray-500 mb-3 text-sm">Upload external files (use mouse):</p> -->
+                <!-- <div class="flex justify-center flex-wrap gap-2">
                     <button class="beatkami-button text-indigo-700 border-indigo-300 text-sm" onclick="document.getElementById('file-input-external-mp3').click()">Upload MP3</button>
                     <button class="beatkami-button text-orange-700 border-orange-300 text-sm" onclick="document.getElementById('file-input-map').click()">Upload Beatmap</button>
-                </div>
+                </div> -->
                 <input type="file" id="file-input-external-mp3" accept="audio/*" style="display: none;">
                 <input type="file" id="file-input-map" accept=".json" style="display: none;">
                 <div id="external-upload-status" class="mt-2 text-sm text-blue-600 font-medium"></div>
@@ -805,6 +854,57 @@
         </div>
     </div>
 
+
+    <!-- === SCREEN: NAME ENTRY === -->
+    <div id="screen-name-entry" class="screen">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl max-w-lg w-full text-center">
+            <h2 class="text-3xl text-gray-700 font-bold mb-4">Enter Your Name</h2>
+            <p class="text-gray-500 mb-6">Use A/D to navigate, Enter to confirm</p>
+            
+            <div class="mb-6">
+                <div id="name-display" class="text-6xl font-black mb-4" style="color: var(--hunter-green); letter-spacing: 0.2em;">
+                    AAAAA
+                </div>
+                <div class="text-sm text-gray-500">Current letter: <span id="current-letter-index">0</span>/5</div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-lg font-semibold text-gray-700 mb-2">Controls:</div>
+                <div class="text-sm text-gray-600">
+                    <div>A / ← : Move left</div>
+                    <div>D / → : Move right</div>
+                    <div>W / ↑ : Previous letter</div>
+                    <div>S / ↓ : Next letter</div>
+                    <div>Enter : Confirm name</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === SCREEN: LEADERBOARD === -->
+    <div id="screen-leaderboard" class="screen">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl max-w-4xl w-full text-center">
+            <h2 class="text-4xl font-black mb-6" style="color: var(--hunter-green);">🏆 LEADERBOARD</h2>
+            
+            <div class="mb-4">
+                <select id="leaderboard-filter" class="p-2 border-2 border-gray-300 rounded-lg text-center">
+                    <option value="all">All Songs</option>
+                    <option value="HipHop">HipHop</option>
+                    <option value="Anime">Anime</option>
+                    <option value="JPOP">JPOP</option>
+                    <option value="Rock">Rock</option>
+                    <option value="Misc">Misc</option>
+                </select>
+            </div>
+            
+            <div id="leaderboard-list" class="flex flex-col gap-2 w-full max-h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="text-gray-500 py-4">Loading leaderboard...</div>
+            </div>
+            
+            <br>
+            <div class="menu-item beatkami-button bg-gray-100 text-gray-600 border-gray-300" data-action="back-to-menu" tabindex="0">Back to Menu</div>
+        </div>
+    </div>
 
     <!-- === SCREEN 6: PLAYER SETUP (Player Count) === -->
     <div id="screen-player-setup" class="screen">
@@ -927,6 +1027,7 @@
     let comboSound = null; // Combo sound effect
     let missSound = null; // Miss sound effect
     let currentMp3File = null; // Store the original MP3 file for upload
+    let originalMp3FileName = null; // Store the original filename
     let comboFlickerTimeout = null; // Timeout for combo background flicker
     let characterState = { 1: 'normal', 2: 'normal' }; // Track character state per player
     let scoreWindow = null; // Reference to score display window (dual monitor mode)
@@ -969,19 +1070,44 @@
     }
     
     // Coolify API Configuration
-    // Change this to your Coolify backend URL (e.g., 'https://your-app.coolify.io' or 'http://your-ip:port')
-    // For local testing: 'http://localhost:3000'
-    // For Coolify deployment: 'https://your-app.coolify.io' or 'http://your-coolify-ip:3000'
-    const COOLIFY_API_URL = 'http://localhost:3000'; // ⚠️ UPDATE THIS TO YOUR COOLIFY URL
+    // Load from config.js (loaded from backend /config.js endpoint or local config.js)
+    // The backend automatically serves the correct URL from COOLIFY_URL environment variable
+    let COOLIFY_API_URL = 'http://l4swwc004848c44o44csg4wg.5.78.111.174.sslip.io'; // Fallback default
+    
+    // Function to get URL from config (may need to wait if script is still loading)
+    function getCoolifyUrl() {
+        if (typeof window !== 'undefined' && window.JOYKADO_CONFIG && window.JOYKADO_CONFIG.COOLIFY_API_URL) {
+            return window.JOYKADO_CONFIG.COOLIFY_API_URL;
+        }
+        return COOLIFY_API_URL;
+    }
+    
+    // Update URL when config is available
+    setTimeout(() => {
+        const configUrl = getCoolifyUrl();
+        if (configUrl !== COOLIFY_API_URL) {
+            COOLIFY_API_URL = configUrl;
+            console.log('Coolify API URL loaded from config:', COOLIFY_API_URL);
+        }
+    }, 100);
+    
     let coolifyEnabled = true; // Set to false to disable Coolify uploads (will still download JSON)
     
     // Navigation state
     let currentMenuIndex = 0;
     let currentMenuItems = [];
-    let navigationMode = 'menu'; // 'menu', 'game', 'options'
+    let navigationMode = 'menu'; // 'menu', 'game', 'options', 'name-entry'
     let currentCategory = null;
     let allSongs = []; // All loaded songs by category
     const CATEGORIES = ['HipHop', 'Anime', 'JPOP', 'Rock', 'Misc'];
+    
+    // Leaderboard state
+    let currentPlayerName = 'AAAAA'; // Default name (5 letters)
+    let nameEntryIndex = 0; // Current letter being edited (0-4)
+    let usernameEntryIndex = 0; // For home screen username entry
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let nameEntryMode = false;
+    let usernameEntryMode = false;
     
     // Sound effects for hit feedback - use AudioContext for better compatibility
     let soundBuffers = {};
@@ -1190,8 +1316,8 @@
     function saveSongLibrary() {
         localStorage.setItem('songLibrary', JSON.stringify(songLibrary));
     } 
-    // Example Song (If you don't use Firestore, this keeps state between sessions)
-    // songLibrary.push({ name: "Demo Track", mp3Url: "https://placehold.co/100x100/00A6EB/white?text=Demo", beatmap: [{time: 1.0, direction: 'up', player: 1}, {time: 1.5, direction: 'right', player: 1}, ...] });
+    // Note: This commented line is just an example - you don't need it.
+    // Songs are loaded from Coolify API or localStorage automatically.
 
     // Note and Key Maps
     const NOTE_MAP = {
@@ -1389,12 +1515,12 @@
         
         // Show/hide game controls based on screen
         const gameControls = document.getElementById('game-controls');
+        // Always hide game controls during gameplay (user requested removal)
+        gameControls.classList.add('hidden');
         if (id === 'screen-game') {
-            gameControls.classList.remove('hidden');
             navigationMode = 'game';
             document.removeEventListener('keydown', handleMenuNavigation);
         } else {
-            gameControls.classList.add('hidden');
             navigationMode = 'menu';
             setupMenuNavigation(id);
         }
@@ -1417,6 +1543,14 @@
     function handleMenuNavigation(event) {
         if (navigationMode !== 'menu') return;
         if (appMode === 'player' || appMode === 'editor') return; // Don't interfere with game
+        
+        // Don't handle navigation if user is typing in an input field
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+            // Allow normal typing - don't interfere with input fields
+            // Only handle Enter for form submission if needed
+            return;
+        }
         
         const key = event.key.toLowerCase();
         
@@ -1479,6 +1613,9 @@
             case 'play':
                 openCategorySelection();
                 break;
+            case 'scores':
+                openLeaderboard();
+                break;
             case 'options':
                 openOptions();
                 break;
@@ -1486,7 +1623,8 @@
                 goToMenu();
                 break;
             case 'back-to-category':
-                openCategorySelection();
+                // Force refresh when going back to category selection (after upload)
+                openCategorySelection(true);
                 break;
             case 'open-creator':
                 openCreatorSetup();
@@ -1509,15 +1647,8 @@
                 } else if (action.startsWith('song-')) {
                     const songIndex = parseInt(action.replace('song-', ''));
                     selectSongFromList(songIndex);
-                } else if (action === 'set-player-1') {
-                    setPlayerCount(1);
-                } else if (action === 'set-player-2') {
-                    setPlayerCount(2);
-                } else if (action === 'start-game') {
-                    if (playerCount > 0) {
-                        preparePlayerGame(playerCount);
-                    }
                 }
+                // Removed player selection - games now start directly with 1 player
         }
     }
     
@@ -1552,11 +1683,16 @@
         }
     }
     
-    function openCategorySelection() {
+    function openCategorySelection(forceRefresh = false) {
         appMode = 'select';
         playClickSound(); // Only play click sound for "Play Songs"
         showScreen('screen-category-select');
         renderCategories();
+        
+        // Store refresh flag for when category is selected
+        if (forceRefresh) {
+            window._forceCategoryRefresh = true;
+        }
     }
     
     function openOptions() {
@@ -1592,16 +1728,30 @@
     }
     
     // Select category and load songs
-    async function selectCategory(category) {
+    async function selectCategory(category, forceRefresh = false) {
         currentCategory = category;
         
-        // Load songs from category folder
-        await loadSongsFromCategory(category);
+        // Check if we should force refresh (from back button after upload)
+        if (window._forceCategoryRefresh) {
+            forceRefresh = true;
+            window._forceCategoryRefresh = false;
+        }
+        
+        // Show loading message
+        const container = document.getElementById('song-list-container');
+        if (container) {
+            container.innerHTML = '<div class="text-gray-500 py-4">Loading songs from Coolify...</div>';
+        }
+        
+        // Load songs from category (API + localStorage)
+        await loadSongsFromCategory(category, forceRefresh);
         
         playNextSound(); // Page change sound
         showScreen('screen-song-select');
-        document.getElementById('category-title').textContent = `${category} Songs`;
-        document.getElementById('category-subtitle').textContent = `Select a song to play`;
+        const categoryTitle = document.getElementById('category-title');
+        const categorySubtitle = document.getElementById('category-subtitle');
+        if (categoryTitle) categoryTitle.textContent = `${category} Songs`;
+        if (categorySubtitle) categorySubtitle.textContent = `Select a song to play`;
         renderSongList();
     }
     
@@ -1630,73 +1780,128 @@
     // Play next sound when changing pages/screens
     function playNextSound() {
         try {
+            // Try to play next.wav, but don't fail if it doesn't exist
             const nextSound = new Audio('sounds/next.wav');
             nextSound.volume = 0.5;
-            nextSound.play().catch(e => console.log("Next sound play error:", e));
+            nextSound.play().catch(e => {
+                // Silently fail - file might not exist
+                console.log("Next sound not available (this is okay)");
+            });
         } catch(e) {
-            console.log("Next sound file not found:", e);
+            // Silently fail - file might not exist
+            console.log("Next sound file not found (this is okay)");
         }
     }
     
     // Load songs from category folder
-    async function loadSongsFromCategory(category) {
-        allSongs = [];
+    async function loadSongsFromCategory(category, forceRefresh = false) {
+        // Clear cache if forcing refresh or if we don't have songs for this category
+        if (forceRefresh) {
+            allSongs = allSongs.filter(s => s.category !== category);
+        }
         
-        // 1. Check localStorage for songs
-        const storedSongs = JSON.parse(localStorage.getItem('songLibrary') || '[]');
-        const categorySongs = storedSongs.filter(song => 
-            song.category === category || 
-            song.name.toLowerCase().includes(category.toLowerCase())
-        );
+        // If we already have songs for this category and not forcing refresh, skip API call
+        const hasSongsForCategory = allSongs.some(s => s.category === category);
+        if (hasSongsForCategory && !forceRefresh) {
+            console.log(`[loadSongsFromCategory] Using cached songs for ${category}`);
+            return;
+        }
         
-        // 2. Try to load from songs folder structure
-        // Format: songs/{category}/{songname}.mp3 and songs/{category}/{songname}_beatmap.json
-        const songFiles = [
-            // Add your song files here or use a server endpoint to list them
-            // Example: `songs/${category}/song1.mp3`
-        ];
+        // Clear songs for this category before loading
+        allSongs = allSongs.filter(s => s.category !== category);
         
-        // Try to load songs from folder (requires server endpoint or pre-defined list)
-        for (const songFile of songFiles) {
+        // 1. Load from Coolify API first (if enabled)
+        if (coolifyEnabled) {
             try {
-                // Check if beatmap exists
-                const beatmapFile = songFile.replace('.mp3', '_beatmap.json');
-                const beatmapResponse = await fetch(beatmapFile);
+                const apiUrl = getCoolifyUrl();
+                console.log(`Loading songs from Coolify API for category: ${category}`);
+                const response = await fetch(`${apiUrl}/api/songs?category=${category}`);
                 
-                if (beatmapResponse.ok) {
-                    const beatmapData = await beatmapResponse.json();
-                    const songName = songFile.split('/').pop().replace('.mp3', '').replace(/_/g, ' ');
+                if (response.ok) {
+                    const apiSongs = await response.json();
+                    console.log(`Loaded ${apiSongs.length} songs from Coolify API`);
                     
-                    allSongs.push({
-                        name: beatmapData.metadata?.name || songName,
-                        mp3Url: songFile,
-                        beatmap: beatmapData.notes || beatmapData,
-                        category: beatmapData.metadata?.category || category,
-                        difficulty: beatmapData.metadata?.difficulty || 'Medium'
-                    });
+                    // Transform API response to match our format
+                    for (const apiSong of apiSongs) {
+                        try {
+                            // Fetch beatmap if URL is provided
+                            let beatmap = null;
+                            if (apiSong.beatmap_url) {
+                                const beatmapResponse = await fetch(`${getCoolifyUrl()}${apiSong.beatmap_url}`);
+                                if (beatmapResponse.ok) {
+                                    beatmap = await beatmapResponse.json();
+                                }
+                            }
+                            
+                            // Parse beatmap correctly
+                            let parsedBeatmap = null;
+                            if (beatmap) {
+                                // If beatmap has a 'notes' property, use that, otherwise use the whole object
+                                if (beatmap.notes && Array.isArray(beatmap.notes)) {
+                                    parsedBeatmap = beatmap.notes;
+                                } else if (Array.isArray(beatmap)) {
+                                    parsedBeatmap = beatmap;
+                                } else {
+                                    console.warn(`Invalid beatmap format for ${apiSong.name}:`, beatmap);
+                                    parsedBeatmap = [];
+                                }
+                            }
+                            
+                            allSongs.push({
+                                name: apiSong.name,
+                                mp3Url: `${getCoolifyUrl()}${apiSong.mp3_url}`,
+                                beatmap: parsedBeatmap,
+                                category: apiSong.category,
+                                difficulty: apiSong.difficulty || 'Medium',
+                                id: apiSong.id // Store ID for reference
+                            });
+                        } catch(e) {
+                            console.error(`Error loading song ${apiSong.name}:`, e);
+                        }
+                    }
+                } else {
+                    console.log(`API request failed: ${response.status}`);
                 }
             } catch(e) {
-                console.log(`Could not load ${songFile}:`, e);
+                console.error('Error loading from Coolify API:', e);
             }
         }
         
-        // 3. Combine localStorage and folder songs
-        allSongs = [...categorySongs, ...allSongs];
+        // 2. Also check localStorage for locally created songs (not yet uploaded)
+        // BUT: Skip songs with blob URLs as they expire and won't work after page reload
+        const storedSongs = JSON.parse(localStorage.getItem('songLibrary') || '[]');
+        const categorySongs = storedSongs.filter(song => {
+            // Only include if it matches category AND doesn't have an expired blob URL
+            if (song.category !== category) return false;
+            // Skip blob URLs - they expire and won't work after page reload
+            if (song.mp3Url && song.mp3Url.startsWith('blob:')) {
+                console.warn(`Skipping song "${song.name}" - it has an expired blob URL. Please re-upload it to the server.`);
+                return false;
+            }
+            return true;
+        });
         
-        // Remove duplicates by name
+        // 3. Combine API songs and localStorage songs
+        allSongs = [...allSongs, ...categorySongs];
+        
+        // 4. Remove duplicates by name (prefer API songs over localStorage)
         const uniqueSongs = [];
         const seenNames = new Set();
-        for (const song of allSongs) {
+        // Process in reverse to keep API songs (they come first)
+        for (let i = allSongs.length - 1; i >= 0; i--) {
+            const song = allSongs[i];
             if (!seenNames.has(song.name)) {
                 seenNames.add(song.name);
-                uniqueSongs.push(song);
+                uniqueSongs.unshift(song); // Add to beginning to maintain API-first order
             }
         }
         allSongs = uniqueSongs;
         
         // If no songs found, show message
         if (allSongs.length === 0) {
-            console.log(`No songs found for category: ${category}`);
+            console.warn(`[loadSongsFromCategory] No songs found for category: ${category}`);
+        } else {
+            console.log(`[loadSongsFromCategory] Total songs loaded for ${category}: ${allSongs.length}`, allSongs);
         }
     }
 
@@ -1796,6 +2001,7 @@
         document.getElementById('start-editor-btn').style.display = 'none';
         document.getElementById('start-editor-btn').style.visibility = 'hidden';
         currentMp3File = null; // Clear stored file
+        originalMp3FileName = null; // Clear original filename
         
         // Ensure listeners are set up
         setupEditorListeners();
@@ -1815,6 +2021,7 @@
                     const url = URL.createObjectURL(file);
                     mainAudio.src = url;
                     currentMp3File = file; // Store file for later upload
+                    originalMp3FileName = file.name; // Store original filename
                     document.getElementById('song-name-input').style.display = 'block';
                     // Play click sound
                     playClickSound();
@@ -1822,6 +2029,7 @@
                      document.getElementById('song-name-input').style.display = 'none';
                      mainAudio.src = '';
                      currentMp3File = null;
+                     originalMp3FileName = null;
                 }
                 checkEditorReady();
             });
@@ -1867,11 +2075,8 @@
         
         // 1. Wait for audio to be ready (Can Play)
         try {
-            await showMessage("Loading audio, please wait...");
             await loadAudioPromise(mainAudio);
-            hideMessage(false); // Hide the loading message
         } catch (error) {
-            hideMessage(false); 
             console.error("Audio load failed:", error);
             await showMessage("Failed to load audio file. Please ensure it is a valid format.");
             return;
@@ -2010,28 +2215,45 @@
         
         // 3. Upload to Coolify (if enabled)
         let uploadStatus = '';
+        let uploadSuccess = false;
         if (coolifyEnabled) {
             try {
                 uploadStatus = await uploadToCoolify(activeSong, beatmapData);
+                // Check if upload was successful (status contains success message)
+                uploadSuccess = uploadStatus.includes('✅') || uploadStatus.includes('Successfully');
             } catch (error) {
                 console.error('Coolify upload error:', error);
                 uploadStatus = '<br><span style="color: #bc4749;">⚠️ Upload to Coolify failed. Check console for details.</span>';
+                uploadSuccess = false;
             }
         }
         
-        // 4. Automatic Download Beatmap JSON (always download as backup)
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(beatmapData));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `${activeSong.name.replace(/\s/g, '_')}_beatmap.json`);
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        // 4. Download Beatmap JSON only if upload failed or Coolify is disabled
+        if (!uploadSuccess) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(beatmapData));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            // Generate unique filename for download
+            const timestamp = Date.now();
+            const randomId = Math.random().toString(36).substring(2, 9);
+            downloadAnchorNode.setAttribute("download", `${activeSong.name.replace(/\s/g, '_')}_${timestamp}_${randomId}_beatmap.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
         
-        // 5. Show Result Screen
+        // 5. Clear cached songs for this category so it refreshes next time
+        if (uploadSuccess && activeSong.category) {
+            // Force reload next time category is selected
+            allSongs = allSongs.filter(s => s.category !== activeSong.category || s.name !== activeSong.name);
+        }
+        
+        // 6. Show Result Screen
         document.getElementById('result-title').innerText = "Beatmap Creation Complete!";
-        document.getElementById('result-message').innerHTML = 
-            `Your map for <b>${activeSong.name}</b> (${recordedNotes.length} notes) has been saved to the Song Library and downloaded as a JSON file.${uploadStatus}`;
+        const resultMessage = uploadSuccess 
+            ? `Your map for <b>${activeSong.name}</b> (${recordedNotes.length} notes) has been saved to the Song Library and uploaded to Coolify!${uploadStatus}`
+            : `Your map for <b>${activeSong.name}</b> (${recordedNotes.length} notes) has been saved to the Song Library.${uploadStatus ? uploadStatus : '<br><span style="color: #bc4749;">JSON file downloaded as backup.</span>'}`;
+        document.getElementById('result-message').innerHTML = resultMessage;
         
         appMode = 'results';
         showScreen('screen-result');
@@ -2046,47 +2268,83 @@
         try {
             let mp3File;
             
-            // Use stored file if available, otherwise fetch from blob URL
-            if (currentMp3File) {
-                mp3File = currentMp3File;
-            } else {
-                // Fallback: fetch from blob URL
-                const response = await fetch(song.mp3Url);
-                if (!response.ok) throw new Error('Failed to fetch MP3 file');
-                const blob = await response.blob();
-                mp3File = new File([blob], `${song.name.replace(/\s/g, '_')}.mp3`, { type: 'audio/mpeg' });
+            // CRITICAL: Always use the stored file - it's the original File object
+            if (!currentMp3File) {
+                throw new Error('MP3 file not found. Please ensure you selected an MP3 file before creating the beatmap.');
+            }
+            
+            mp3File = currentMp3File;
+            console.log('📤 Uploading MP3 file:', {
+                name: mp3File.name,
+                size: mp3File.size,
+                type: mp3File.type,
+                lastModified: mp3File.lastModified
+            });
+            
+            if (!mp3File || mp3File.size === 0) {
+                throw new Error('MP3 file is empty or invalid');
             }
             
             // Create FormData for multipart upload
             const formData = new FormData();
-            formData.append('mp3', mp3File);
+            
+            // CRITICAL: Append MP3 file first with proper field name
+            formData.append('mp3', mp3File, mp3File.name);
+            
+            // Append beatmap as JSON string (not as file)
             formData.append('beatmap', JSON.stringify(beatmapData));
+            
+            // Append metadata
             formData.append('name', song.name);
             formData.append('category', song.category);
-            formData.append('difficulty', song.difficulty);
+            formData.append('difficulty', song.difficulty || 'Medium');
+            
+            // Append original filename for better naming
+            if (originalMp3FileName) {
+                formData.append('original_filename', originalMp3FileName);
+            }
+            
+            // Debug: Log FormData contents (can't directly read, but verify what we're sending)
+            console.log('📦 FormData prepared:', {
+                name: song.name,
+                category: song.category,
+                difficulty: song.difficulty,
+                mp3FileName: mp3File.name,
+                mp3FileSize: mp3File.size,
+                beatmapSize: JSON.stringify(beatmapData).length
+            });
+            
+            const apiUrl = getCoolifyUrl();
+            console.log('🌐 Uploading to:', `${apiUrl}/api/songs/upload`);
             
             // Upload to Coolify API
-            const response = await fetch(`${COOLIFY_API_URL}/api/songs/upload`, {
+            const response = await fetch(`${apiUrl}/api/songs/upload`, {
                 method: 'POST',
                 body: formData
+                // Don't set Content-Type - browser will set it with boundary for multipart/form-data
             });
             
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error('❌ Upload failed:', response.status, errorText);
                 throw new Error(`Upload failed: ${response.status} - ${errorText}`);
             }
             
             const result = await response.json();
-            console.log('Upload successful:', result);
+            console.log('✅ Upload successful:', result);
             
             // Clear the stored file after successful upload
             currentMp3File = null;
+            originalMp3FileName = null;
             
             return `<br><span style="color: #6a994e;">✅ Successfully uploaded to Coolify in category: <b>${song.category}</b></span>`;
         } catch (error) {
-            console.error('Upload error:', error);
+            console.error('❌ Upload error:', error);
             // Return error message but don't throw - allow download to continue
-            return `<br><span style="color: #bc4749;">⚠️ Upload failed: ${error.message}. JSON file downloaded as backup.</span>`;
+            if (error.message.includes('Failed to fetch')) {
+                return `<br><span style="color: #bc4749;">⚠️ Upload failed: Cannot reach Coolify server. Check that COOLIFY_API_URL is correct and the server is running.</span>`;
+            }
+            return `<br><span style="color: #bc4749;">⚠️ Upload failed: ${error.message}</span>`;
         }
     }
     
@@ -2160,7 +2418,12 @@
                 category: externalMapMetadata?.category || 'Misc',
                 difficulty: externalMapMetadata?.difficulty || 'Medium'
             };
-            openPlayerSetup();
+            // Start game directly (1 player)
+            playerCount = 1;
+            preparePlayerGame(1).catch(error => {
+                console.error('Failed to prepare game:', error);
+                alert('Failed to load song: ' + error.message);
+            });
         }
     }
     
@@ -2174,14 +2437,24 @@
 
         const songsToShow = currentCategory ? allSongs : songLibrary;
         
+        console.log(`[renderSongList] Rendering songs. currentCategory: ${currentCategory}, songsToShow.length: ${songsToShow.length}`);
+        console.log(`[renderSongList] allSongs:`, allSongs);
+        console.log(`[renderSongList] songLibrary:`, songLibrary);
+        
         if (songsToShow.length === 0) {
-            document.getElementById('no-songs-message').textContent = currentCategory 
-                ? `No songs found in ${currentCategory} category.` 
-                : 'No songs created yet. Use the "Beatmap Creator" in Options!';
-            document.getElementById('no-songs-message').style.display = 'block';
+            const noSongsMsg = document.getElementById('no-songs-message');
+            if (noSongsMsg) {
+                noSongsMsg.textContent = currentCategory 
+                    ? `No songs found in ${currentCategory} category.` 
+                    : 'No songs created yet. Use the "Beatmap Creator" in Options!';
+                noSongsMsg.style.display = 'block';
+            }
             return;
         }
-        document.getElementById('no-songs-message').style.display = 'none';
+        const noSongsMsg = document.getElementById('no-songs-message');
+        if (noSongsMsg) {
+            noSongsMsg.style.display = 'none';
+        }
 
         songsToShow.forEach((song, index) => {
             const card = document.createElement('div');
@@ -2205,6 +2478,12 @@
                 <div class="text-xl text-beatkami-primary">▶</div>
             `;
             card.innerHTML = detailsHtml;
+            // Make clickable with Enter key (already handled by menu navigation)
+            // Also add click handler for mouse users
+            card.addEventListener('click', () => {
+                playClickSound();
+                selectSongFromList(index);
+            });
             container.appendChild(card);
         });
         
@@ -2220,7 +2499,217 @@
 
     function selectSong(song) {
         activeSong = song;
-        openPlayerSetup();
+        // Check if username is already saved
+        const savedUsername = localStorage.getItem('joykado_username');
+        if (savedUsername) {
+            // Use saved username, skip name entry
+            currentPlayerName = savedUsername;
+            // Skip player setup, go directly to game (default to 1 player)
+            playerCount = 1;
+            preparePlayerGame(1).catch(error => {
+                console.error('Failed to prepare game:', error);
+                alert('Failed to load song. Please check the console for details.');
+            });
+        } else {
+            // No saved username, show name entry
+            openNameEntry();
+        }
+    }
+    
+    // === NAME ENTRY SCREEN ===
+    function openNameEntry() {
+        appMode = 'name-entry';
+        nameEntryMode = true;
+        nameEntryIndex = 0;
+        // Try to load saved username, otherwise use default
+        const savedUsername = localStorage.getItem('joykado_username');
+        currentPlayerName = savedUsername || 'AAAAA';
+        updateNameDisplay();
+        showScreen('screen-name-entry');
+        document.addEventListener('keydown', handleNameEntryKeyDown);
+    }
+    
+    function handleNameEntryKeyDown(event) {
+        if (!nameEntryMode) return;
+        
+        const key = event.key.toLowerCase();
+        event.preventDefault();
+        
+        if (key === 'enter' || key === ' ') {
+            // Confirm name
+            nameEntryMode = false;
+            document.removeEventListener('keydown', handleNameEntryKeyDown);
+            playClickSound();
+            // Save username to localStorage
+            localStorage.setItem('joykado_username', currentPlayerName);
+            // Skip player setup, go directly to game (default to 1 player)
+            playerCount = 1;
+            preparePlayerGame(1).catch(error => {
+                console.error('Failed to prepare game:', error);
+                alert('Failed to load song: ' + error.message);
+            });
+            return;
+        }
+        
+        if (key === 'a' || key === 'arrowleft') {
+            // Move to previous position (left)
+            nameEntryIndex = Math.max(0, nameEntryIndex - 1);
+            updateNameDisplay();
+            playButtonSound();
+        } else if (key === 'd' || key === 'arrowright') {
+            // Move to next position (right)
+            nameEntryIndex = Math.min(4, nameEntryIndex + 1);
+            updateNameDisplay();
+            playButtonSound();
+        } else if (key === 'w' || key === 'arrowup') {
+            // Previous letter (up in alphabet)
+            const currentLetter = currentPlayerName[nameEntryIndex];
+            const currentIndex = ALPHABET.indexOf(currentLetter);
+            const newIndex = (currentIndex - 1 + ALPHABET.length) % ALPHABET.length;
+            updateNameLetter(nameEntryIndex, ALPHABET[newIndex]);
+            playButtonSound();
+        } else if (key === 's' || key === 'arrowdown') {
+            // Next letter (down in alphabet)
+            const currentLetter = currentPlayerName[nameEntryIndex];
+            const currentIndex = ALPHABET.indexOf(currentLetter);
+            const newIndex = (currentIndex + 1) % ALPHABET.length;
+            updateNameLetter(nameEntryIndex, ALPHABET[newIndex]);
+            playButtonSound();
+        }
+    }
+    
+    function updateNameLetter(index, letter) {
+        const nameArray = currentPlayerName.split('');
+        nameArray[index] = letter;
+        currentPlayerName = nameArray.join('');
+        updateNameDisplay();
+    }
+    
+    function updateNameDisplay() {
+        const display = document.getElementById('name-display');
+        const indexDisplay = document.getElementById('current-letter-index');
+        
+        if (display) {
+            let html = '';
+            for (let i = 0; i < 5; i++) {
+                const letter = currentPlayerName[i] || 'A';
+                const isActive = i === nameEntryIndex;
+                const style = isActive 
+                    ? 'color: var(--beatkami-primary); text-shadow: 0 0 20px var(--beatkami-primary); transform: scale(1.2);'
+                    : 'color: var(--hunter-green);';
+                html += `<span style="${style}">${letter}</span>`;
+            }
+            display.innerHTML = html;
+        }
+        
+        if (indexDisplay) {
+            indexDisplay.textContent = nameEntryIndex + 1;
+        }
+    }
+    
+    // === LEADERBOARD ===
+    function openLeaderboard() {
+        appMode = 'leaderboard';
+        showScreen('screen-leaderboard');
+        loadLeaderboard();
+        setupMenuNavigation('screen-leaderboard');
+    }
+    
+    async function loadLeaderboard(filter = 'all') {
+        const container = document.getElementById('leaderboard-list');
+        container.innerHTML = '<div class="text-gray-500 py-4">Loading leaderboard...</div>';
+        
+        try {
+            const apiUrl = getCoolifyUrl();
+            let url = `${apiUrl}/api/leaderboard?limit=50`;
+            if (filter !== 'all') {
+                url += `&song_category=${filter}`;
+            }
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const scores = await response.json();
+            
+            if (scores.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 py-4">No scores yet. Be the first!</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Group by song
+            const bySong = {};
+            scores.forEach(score => {
+                const key = `${score.song_name} (${score.song_category})`;
+                if (!bySong[key]) {
+                    bySong[key] = [];
+                }
+                bySong[key].push(score);
+            });
+            
+            // Display top 10 per song
+            Object.keys(bySong).sort().forEach(songKey => {
+                const songScores = bySong[songKey].slice(0, 10);
+                
+                const songHeader = document.createElement('div');
+                songHeader.className = 'text-left font-bold text-lg text-gray-700 mb-2 mt-4';
+                songHeader.textContent = songKey;
+                container.appendChild(songHeader);
+                
+                songScores.forEach((score, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 mb-1';
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-gray-600 w-8">#${idx + 1}</span>
+                            <span class="font-bold text-gray-800">${score.player_name}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-gray-600">Combo: <strong>${score.combo}</strong></span>
+                            <span class="text-gray-600">Accuracy: <strong>${(score.accuracy || 0).toFixed(1)}%</strong></span>
+                            <span class="font-bold text-xl text-beatkami-primary">${score.score.toLocaleString()}</span>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            });
+        } catch(e) {
+            console.error('Error loading leaderboard:', e);
+            container.innerHTML = '<div class="text-red-500 py-4">Failed to load leaderboard. Check console for details.</div>';
+        }
+    }
+    
+    async function saveScore(score, combo, accuracy) {
+        if (!activeSong || !currentPlayerName) return;
+        
+        try {
+            const apiUrl = getCoolifyUrl();
+            const response = await fetch(`${apiUrl}/api/leaderboard`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    player_name: currentPlayerName,
+                    song_name: activeSong.name,
+                    song_category: activeSong.category || 'Misc',
+                    score: score,
+                    combo: combo,
+                    accuracy: accuracy
+                })
+            });
+            
+            if (response.ok) {
+                console.log('Score saved successfully');
+            } else {
+                console.error('Failed to save score:', await response.text());
+            }
+        } catch(e) {
+            console.error('Error saving score:', e);
+        }
     }
 
     // === PLAYER MODE SETUP: PLAYER COUNT ===
@@ -2251,9 +2740,87 @@
         setupMenuNavigation('screen-player-setup');
     }
     
-    function preparePlayerGame(count) {
+    async function preparePlayerGame(count) {
+        // Ensure audio context is initialized before loading
+        if (!audioContext) {
+            initAudioContext();
+        }
+        
+        // Validate song data
+        if (!activeSong || !activeSong.mp3Url) {
+            throw new Error('Song data is missing or invalid');
+        }
+        
+        // Load the audio file
+        console.log('Loading audio from:', activeSong.mp3Url);
         mainAudio.src = activeSong.mp3Url;
-        playNotes = activeSong.beatmap.slice().sort((a, b) => a.time - b.time); // Sort and copy
+        
+        // Check if this is a blob URL (from localStorage) - these expire and won't work
+        if (activeSong.mp3Url && activeSong.mp3Url.startsWith('blob:')) {
+            throw new Error('This song was saved locally and the file is no longer available. Please re-upload it or use a song from the server.');
+        }
+        
+        // Wait for audio to be ready
+        try {
+            await new Promise((resolve, reject) => {
+                // Check if audio is already loaded
+                if (mainAudio.readyState >= 2) {
+                    resolve();
+                    return;
+                }
+                
+                const timeout = setTimeout(() => {
+                    reject(new Error('Audio load timeout - the file may not exist or the server is not responding'));
+                }, 10000); // Increased timeout to 10 seconds
+                
+                const cleanup = () => {
+                    clearTimeout(timeout);
+                    mainAudio.removeEventListener('loadeddata', onLoaded);
+                    mainAudio.removeEventListener('error', onError);
+                };
+                
+                const onLoaded = () => {
+                    cleanup();
+                    resolve();
+                };
+                
+                const onError = (error) => {
+                    cleanup();
+                    const errorMsg = error?.message || mainAudio.error?.message || 'Unknown audio error';
+                    const errorCode = mainAudio.error?.code;
+                    let detailedError = `Audio load failed: ${errorMsg}`;
+                    if (errorCode) {
+                        detailedError += ` (Error code: ${errorCode})`;
+                    }
+                    reject(new Error(detailedError));
+                };
+                
+                mainAudio.addEventListener('loadeddata', onLoaded);
+                mainAudio.addEventListener('error', onError);
+            });
+        } catch (error) {
+            console.error('Failed to load audio:', error);
+            const errorMessage = error?.message || 'Unknown error';
+            throw new Error(`Failed to load song: ${errorMessage}`);
+        }
+        
+        // Parse beatmap - handle different formats
+        let beatmapData = activeSong.beatmap;
+        if (Array.isArray(beatmapData)) {
+            // Already an array of notes
+            playNotes = beatmapData.slice().sort((a, b) => a.time - b.time);
+        } else if (beatmapData && beatmapData.notes) {
+            // Beatmap object with notes property
+            playNotes = beatmapData.notes.slice().sort((a, b) => a.time - b.time);
+        } else if (beatmapData && Array.isArray(beatmapData)) {
+            playNotes = beatmapData.slice().sort((a, b) => a.time - b.time);
+        } else {
+            console.error('Invalid beatmap format:', beatmapData);
+            playNotes = [];
+        }
+        
+        console.log(`Loaded ${playNotes.length} notes for game`);
+        
         startCountdown(() => startPlayerGame(count));
     }
 
@@ -2610,20 +3177,35 @@
         // const elapsed = timestamp - lastTime;
         lastTime = timestamp;
 
-        if (mainAudio.paused) {
+        if (mainAudio.paused || !mainAudio.src) {
             cancelAnimationFrame(animationFrameId);
             return;
         }
 
         const currentTime = mainAudio.currentTime;
-        document.getElementById('time-display').innerText = formatTime(currentTime);
-        document.getElementById('progress-bar').style.width = `${(currentTime / mainAudio.duration) * 100}%`;
+        if (document.getElementById('time-display')) {
+            document.getElementById('time-display').innerText = formatTime(currentTime);
+        }
+        if (document.getElementById('progress-bar')) {
+            document.getElementById('progress-bar').style.width = `${(currentTime / mainAudio.duration) * 100}%`;
+        }
 
+        // Ensure we have notes to spawn
+        if (!playNotes || playNotes.length === 0) {
+            animationFrameId = requestAnimationFrame(playerGameLoop);
+            return;
+        }
 
         // 1. Check for notes that should be spawned
         // Spawn all notes that should be visible (for both players in sequence)
         for (let i = 0; i < playNotes.length; i++) {
             const note = playNotes[i];
+            
+            // Validate note structure
+            if (!note || typeof note.time !== 'number' || !note.direction || !note.player) {
+                console.warn(`Invalid note at index ${i}:`, note);
+                continue;
+            }
             
             // Skip if already spawned or hit
             if (activeNotesMap.has(i) || note.hit) {
@@ -2710,10 +3292,25 @@
         }
         stopGame();
         
+        // Calculate accuracy (count notes that were hit)
+        const totalNotes = activeSong.beatmap ? activeSong.beatmap.length : 0;
+        let hitNotes = 0;
+        if (activeSong.beatmap) {
+            activeSong.beatmap.forEach(note => {
+                if (note.hit) hitNotes++;
+            });
+        }
+        const accuracy = totalNotes > 0 ? (hitNotes / totalNotes) * 100 : 0;
+        
+        // Save score to leaderboard
+        saveScore(score, maxCombo, accuracy);
+        
         document.getElementById('result-title').innerText = "Game Over!";
         document.getElementById('result-message').innerHTML = `
-            <p>Score: <b>${score}</b></p>
+            <p>Player: <b>${currentPlayerName}</b></p>
+            <p>Score: <b>${score.toLocaleString()}</b></p>
             <p>Max Combo: <b>${maxCombo}</b></p>
+            <p>Accuracy: <b>${accuracy.toFixed(1)}%</b></p>
             <p>Thanks for playing <b>${activeSong.name}</b>!</p>
         `;
         
@@ -2760,7 +3357,103 @@
     loadSongLibrary();
     initBackgroundMusic();
     setupEditorListeners(); // Setup editor file input listeners
-    goToMenu();
+    
+    // Start with username entry screen (only if no saved username)
+    const savedUsername = localStorage.getItem('joykado_username');
+    if (savedUsername) {
+        currentPlayerName = savedUsername;
+        document.getElementById('player-name-text').textContent = currentPlayerName;
+        showScreen('screen-menu');
+        setupMenuNavigation('screen-menu');
+    } else {
+        openUsernameEntry();
+    }
+    
+    // Username entry handler
+    function handleUsernameEntryKeyDown(event) {
+        if (!usernameEntryMode) return;
+        
+        const key = event.key.toLowerCase();
+        event.preventDefault();
+        
+        if (key === 'enter' || key === ' ') {
+            // Confirm username
+            usernameEntryMode = false;
+            document.removeEventListener('keydown', handleUsernameEntryKeyDown);
+            playClickSound();
+            // Save username to localStorage
+            localStorage.setItem('joykado_username', currentPlayerName);
+            // Update player name display and go to menu
+            document.getElementById('player-name-text').textContent = currentPlayerName;
+            showScreen('screen-menu');
+            setupMenuNavigation('screen-menu');
+            return;
+        }
+        
+        if (key === 'a' || key === 'arrowleft') {
+            // Move to previous position (left)
+            usernameEntryIndex = Math.max(0, usernameEntryIndex - 1);
+            updateUsernameDisplay();
+            playButtonSound();
+        } else if (key === 'd' || key === 'arrowright') {
+            // Move to next position (right)
+            usernameEntryIndex = Math.min(4, usernameEntryIndex + 1);
+            updateUsernameDisplay();
+            playButtonSound();
+        } else if (key === 'w' || key === 'arrowup') {
+            // Previous letter (up in alphabet)
+            const currentLetter = currentPlayerName[usernameEntryIndex];
+            const currentIndex = ALPHABET.indexOf(currentLetter);
+            const newIndex = (currentIndex - 1 + ALPHABET.length) % ALPHABET.length;
+            updateUsernameLetter(usernameEntryIndex, ALPHABET[newIndex]);
+            playButtonSound();
+        } else if (key === 's' || key === 'arrowdown') {
+            // Next letter (down in alphabet)
+            const currentLetter = currentPlayerName[usernameEntryIndex];
+            const currentIndex = ALPHABET.indexOf(currentLetter);
+            const newIndex = (currentIndex + 1) % ALPHABET.length;
+            updateUsernameLetter(usernameEntryIndex, ALPHABET[newIndex]);
+            playButtonSound();
+        }
+    }
+    
+    function openUsernameEntry() {
+        usernameEntryMode = true;
+        usernameEntryIndex = 0;
+        currentPlayerName = 'AAAAA';
+        updateUsernameDisplay();
+        showScreen('screen-username-entry');
+        document.addEventListener('keydown', handleUsernameEntryKeyDown);
+    }
+    
+    function updateUsernameLetter(index, letter) {
+        const nameArray = currentPlayerName.split('');
+        nameArray[index] = letter;
+        currentPlayerName = nameArray.join('');
+        updateUsernameDisplay();
+    }
+    
+    function updateUsernameDisplay() {
+        const display = document.getElementById('username-display');
+        const indexDisplay = document.getElementById('username-letter-index');
+        
+        if (display) {
+            let html = '';
+            for (let i = 0; i < 5; i++) {
+                const letter = currentPlayerName[i] || 'A';
+                const isActive = i === usernameEntryIndex;
+                const style = isActive 
+                    ? 'color: var(--beatkami-primary); text-shadow: 0 0 20px var(--beatkami-primary); transform: scale(1.2);'
+                    : 'color: var(--hunter-green);';
+                html += `<span style="${style}">${letter}</span>`;
+            }
+            display.innerHTML = html;
+        }
+        
+        if (indexDisplay) {
+            indexDisplay.textContent = usernameEntryIndex + 1;
+        }
+    }
 </script>
 </body>
 </html>
